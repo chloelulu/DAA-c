@@ -1,0 +1,36 @@
+args=(commandArgs(TRUE))
+if(length(args)==0){
+  print("No arguments supplied.")
+} else{
+  method = args[1]
+  method = as.character(method)
+  i = as.integer(args[2])}
+
+
+
+setwd('/research/bsi/projects/staff_analysis/m216453/correlated/')
+source('code/CompetingMethods1.R') ## can adjust Z
+load('Data/dat.Nicholas_2013_genus.Rdata')
+dat$counts <- as.matrix(dat$counts)
+
+
+load('Data/dat.Nicholas2013.subset100.meta.Rdata')
+dat$meta.dat <- meta.list[[i]]
+dat$counts <- dat$counts[,rownames(dat$meta.dat)]
+dat$prop <- dat$prop[,rownames(dat$meta.dat)]
+dat$gmpr.size.factor <- dat$gmpr.size.factor[rownames(dat$meta.dat)]
+
+## Initially I tried comparing  MZ vs DZ twin pairs, age is confounding variable, random effect: SubjectID 
+methods_funs <- list('glmernb'='glmernb.func','lme4'='lme4.func','GLMMPQL'='GLMMPQL.func','ZIBR'='ZIBR.func','LDM'='LDM.func','NBMM'='NBMM.func',
+                     'MaAsLin2'='MaAsLin2.func','ZIGMM'='ZIGMM.func','ZINBMM'='ZINBMM.func','glmmadaptive'='glmmadaptive.func','IFAA'='IFAA.func',
+                     'glmmTMB'='glmmTMB.func','LinDA'='LinDA.func','lme' = 'lme.func','lmer'='lmer.func')
+# methods <- c('GLMMPQL','glmernb','ZIBR','LDM','LinDA','NBMM','ZIGMM','ZINBMM','glmmadaptive','glmmTMB','MaAsLin2')
+wrapper <- match.fun(methods_funs[[method]])
+if(method=='MaAsLin2'){
+  wrapper.obj <- wrapper(dat,cutoff=0.05,output = '/research/bsi/projects/staff_analysis/m216453/', data.type ='matched.pair')
+}else{
+  wrapper.obj <- wrapper(dat,cutoff=0.05, data.type ='matched.pair')
+}
+save(wrapper.obj, file = paste0('/research/bsi/projects/staff_analysis/m216453/correlated/Data/realsubset/', method,'_',i, '_Nicholas2013.res.Rdata'))
+
+
