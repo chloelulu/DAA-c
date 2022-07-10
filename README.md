@@ -1,2 +1,2 @@
 # DAA-c
-Scripts and outputs for manuscript: Benchmarking Differential Abundance Analysis Methods for Correlated Microbiome Sequencing Data.
+Scripts and datasets for manuscript: Benchmarking Differential Abundance Analysis Methods for Correlated Microbiome Sequencing Data.
