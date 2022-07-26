@@ -20,7 +20,6 @@ paras$balanced.Xs <- T
 paras$balanced.Ts <- T
 paras$balanced.XTs <- T
 
-#paras$MgXs <- c(1.8,2.3)
 paras$MgXs <- c(2.5,3.5)
 paras$SgXs <- 0
 paras$X.diff.otu.pcts <- 0.1

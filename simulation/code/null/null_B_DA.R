@@ -11,7 +11,7 @@ paras$model.paras <- NULL
 paras$resdir <- resdir
 paras$prefix <- prefix
 paras$methods <- c('glmernb','GLMMPQL','ZIBR','LDM','NBMM','ZIGMM','ZINBMM','glmmadaptive','glmmTMB','LinDA')
-#paras$methods <- 'MaAsLin2'
+
 paras$nSubjects <- 100
 paras$nTimes <- 2
 paras$matched.pair <- F

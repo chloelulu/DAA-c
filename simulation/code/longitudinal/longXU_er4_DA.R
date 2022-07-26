@@ -11,8 +11,7 @@ paras <- list()
 paras$model.paras <- NULL
 paras$resdir <- resdir
 paras$prefix <- prefix
-#paras$methods <- c('MaAsLin2','lme','glmernb','GLMMPQL','ZIBR','LDM','NBMM','ZIGMM','ZINBMM','glmmadaptive','glmmTMB','LinDA')
-paras$methods <- 'IFAA'#c('MaAsLin2CSS','MaAsLin2TMM','MaAsLin2GMPR')
+paras$methods <- c('MaAsLin2','glmernb','GLMMPQL','ZIBR','LDM','NBMM','ZIGMM','ZINBMM','glmmadaptive','glmmTMB','LinDA','MaAsLin2CSS','MaAsLin2TMM','MaAsLin2GMPR')
 
 paras$nSubjects <- 40
 paras$nTimes <- 5

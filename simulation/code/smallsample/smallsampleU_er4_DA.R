@@ -11,7 +11,6 @@ paras$model.paras <- NULL
 paras$resdir <- resdir
 paras$prefix <- prefix
 paras$methods <- c('MaAsLin2','glmernb','GLMMPQL','ZIBR','LDM','NBMM','ZIGMM','ZINBMM','glmmadaptive','glmmTMBP','LinDA')
-#paras$methods <-c('MaAsLin2')
 
 paras$nSubjects <- 20
 paras$nTimes <- 2

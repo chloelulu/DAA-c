@@ -11,7 +11,6 @@ paras$model.paras <- NULL
 paras$resdir <- resdir
 paras$prefix <- prefix
 paras$methods <- c('MaAsLin2','glmernb','GLMMPQL','ZIBR','LDM','NBMM','ZIGMM','ZINBMM','glmmadaptive','glmmTMBP','LinDA')
-#paras$methods <-c('MaAsLin2')
 
 paras$nSubjects <- 20
 paras$nTimes <- 2
@@ -22,7 +21,6 @@ paras$balanced.Xs <- F
 paras$balanced.Ts <- F
 paras$balanced.XTs <- F
 
-#paras$MgXs <- c(4,6)
 paras$MgXs <-c(1,2)
 paras$SgXs <- 0
 paras$X.diff.otu.pcts <- 0.1

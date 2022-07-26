@@ -10,8 +10,7 @@ paras <- list()
 paras$model.paras <- NULL
 paras$resdir <- resdir
 paras$prefix <- prefix
-#paras$methods <- c('lme','glmernb','GLMMPQL','ZIBR','LDM','NBMM','ZIGMM','ZINBMM','glmmadaptive','glmmTMB','LinDA')
-paras$methods <-'MaAsLin2'
+paras$methods <- c('glmernb','GLMMPQL','ZIBR','LDM','NBMM','ZIGMM','ZINBMM','glmmadaptive','glmmTMB','LinDA')
 
 paras$nSubjects <- 100
 paras$nTimes <- 2
