@@ -25,12 +25,10 @@ cal.FDR.TPR <- function(var.cols, data, alpha=0.05){
 # source('~/Documents/Mayo_Research/SemiSimulation/DAMethodsEvaluation/code/SimulationEvaluation/ancom_v2.1.R')
 pkg <- c('nlme','lme4','MASS','LinDA','ZIBR','LDM','aod','compositions','tidyverse','GMPR','glmmTMB','NBZIMM','GLMMadaptive','tibble','Maaslin2','IFAA')
 suppressPackageStartupMessages(sapply(pkg, require, character = T))
-# source('~/Documents/Mayo_Research/2021_03_29_CorrelatedData/Code/ancom2.R')
 
 ## For current test realdata, we dont have Z for matched pair
 
 ## lme4
-## http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#overdispersion
 glmernb.func <- function(dat, cutoff = 0.05, data.type='longitudinal'){
   otu.tab=dat[['counts']]
   meta=dat[['meta.dat']]
@@ -221,8 +219,6 @@ LDM.func <- function(dat, cutoff = 0.05, data.type ='longitudinal'){
 }
 
 
-## https://drizopoulos.github.io/GLMMadaptive/articles/ZeroInflated_and_TwoPart_Models.html#zero-inflated-poisson-mixed-effects-model-1
-## encounter potential error, see https://stats.stackexchange.com/questions/397955/mixed-effect-zero-inflated-negative-binomial-model-the-leading-minor-of-order
 glmmadaptive.func <- function(dat, cutoff = 0.05,data.type ='longitudinal'){
   t_start = Sys.time()
   otu.tab = (dat$counts)
@@ -265,8 +261,6 @@ glmmadaptive.func <- function(dat, cutoff = 0.05,data.type ='longitudinal'){
 }
 
 
-## https://fromthebottomoftheheap.net/2017/05/04/compare-mgcv-with-glmmtmb/
-## the conditional output represents the zero portion (or a logistic regression) - the zero inflated output represents a "mixture" model of the two distributions - one for the subgroup who reports zero or close to zero and one for the subgroup who doesn't report zero.
 glmmTMB.func <- function(dat, cutoff = 0.05,data.type ='longitudinal'){
   t_start = Sys.time()
   otu.tab = dat$counts
@@ -310,7 +304,6 @@ glmmTMB.func <- function(dat, cutoff = 0.05,data.type ='longitudinal'){
 }
 
 
-## LinDA https://github.com/zhouhj1994/LinDA
 LinDA.func <- function(dat, cutoff = 0.05, data.type ='longitudinal'){
   t_start = Sys.time()
   otu.tab = dat$counts
@@ -341,100 +334,6 @@ LinDA.func <- function(dat, cutoff = 0.05, data.type ='longitudinal'){
 }
 
 
-lmer.func <- function(dat, cutoff = 0.05,data.type='longitudinal'){
-  prop = asin(sqrt(dat[['prop']]))
-  meta = dat[['meta.dat']]
-  t_start = Sys.time()
-  pvs <- name <- NULL
-  for (y in rownames(prop)){
-    df <- merge(merge(cbind(taxon = otu.tab[y,]),meta,by = 0) %>% column_to_rownames('Row.names'), cbind(log.size.factor = log(dat$gmpr.size.factor)),by = 0) %>% column_to_rownames('Row.names')
-    model <- NULL
-    if(data.type =='repeated.measure'){
-      try(model <- lme4::lmer(taxon ~ X +Z+  (1|SubjectID) + offset(log.size.factor), data=df),silent = T)
-      if(class(model) %in% 'NULL'){pv <- NA}else{
-        pv <- wald.test(b = fixed.effects(model), Sigma = vcov( model), Terms = grep('^X$',names(fixed.effects( model))))$result$chi2['P']
-      }
-      pvs <- rbind(pvs,pv)
-      name <- c(name, y)
-      colnames(pvs) = 'X'
-    }
-    
-    if(data.type =='matched.pair'){
-      try(model <- lme4::lmer(taxon ~ X +  (1|SubjectID) + offset(log.size.factor), data=df),silent = T)
-      if(class(model) %in% 'NULL'){pv <- NA}else{
-        pv <- wald.test(b = fixed.effects(model), Sigma = vcov( model), Terms = grep('^time$',names(fixed.effects( model))))$result$chi2['P']
-      }
-      pvs <- rbind(pvs,pv)
-      name <- c(name, y)
-      colnames(pvs) = 'X'
-    }
-    
-    if(data.type =='longitudinal'){
-      try(model <- lme4::lmer(taxon ~ X*time +  (time|SubjectID) + offset(log.size.factor), data=df),silent = T)
-      if(class(model) %in% 'NULL'){pv <- c(NA,NA,NA)}else{
-        pv.X <- wald.test(b = fixed.effects( model), Sigma = vcov( model), Terms = grep('^X$',names(fixed.effects(model))))$result$chi2['P']
-        pv.T <- wald.test(b = fixed.effects( model), Sigma = vcov( model), Terms = grep('^time$',names(fixed.effects(model))))$result$chi2['P']
-        pv.XT <- wald.test(b = fixed.effects( model), Sigma = vcov( model), Terms = grep('X:time',names(fixed.effects(model))))$result$chi2['P']
-        pv <- c(pv.X, pv.T, pv.XT)
-      }
-      names(pv) = c('X','time','interaction')
-      pvs <- rbind(pvs,pv)
-      name <- c(name, y)
-    }
-  }
-  
-  t_run = as.numeric(difftime(Sys.time(), t_start,units = 'secs'))
-  res <- as.data.frame(apply(pvs, 2, function(x) p.adjust(x,method ='fdr')))
-  rownames(res) <- name
-  colnames(res) = paste0(colnames(res),'.padj')
-  na <- apply(res, 2, function(x)sum(is.na(x))/length(x))
-  sig <- apply(res, 2, function(x) sum(x[!is.na(x)] <= cutoff)) 
-  return(list(res=res, na = na, time = t_run, sig = sig))
-}
-
-
-
-lme.func <- function(dat, cutoff = 0.05,data.type='longitudinal'){
-  prop = asin(sqrt(dat[['prop']]))
-  meta = dat[['meta.dat']]
-  t_start = Sys.time()
-  pvs <- name <- NULL
-  for (y in rownames(prop)){
-    df <- merge(merge(cbind(taxon = otu.tab[y,]),meta,by = 0) %>% column_to_rownames('Row.names'), cbind(log.size.factor = log(dat$gmpr.size.factor)),by = 0) %>% column_to_rownames('Row.names')
-    model <- NULL
-    if(data.type =='repeated.measure'){
-      try(model <- lme(taxon ~ X +  offset(log.size.factor), random = ~1|SubjectID, data=df),silent = T)
-      if(class(model) %in% 'NULL'){pv = NA}else{pv <- summary(model)$tTable[2, 5]}
-      pvs <- rbind(pvs,pv)
-      name <- c(name, y)
-      colnames(pvs) = 'X'
-    }
-    
-    if(data.type =='matched.pair'){
-      try(model <- lme(taxon ~ time +  offset(log.size.factor), random = ~1|SubjectID, data=df),silent = T)
-      if(class(model) %in% 'NULL'){pv = NA}else{pv <- summary(model)$tTable[2, 5]}
-      pvs <- rbind(pvs,pv)
-      name <- c(name, y)
-      colnames(pvs) = 'X'
-    }
-    
-    if(data.type =='longitudinal'){
-      try(model <- lme(taxon ~ X*time +  offset(log.size.factor), list(SubjectID = pdDiag(~time)), data=df),silent = T)
-      if(class(model) %in% 'NULL'){pv = NA}else{pv <- summary(model)$tTable[c(2:3,5), 5]}
-      pvs <- rbind(pvs,pv)
-      name <- c(name, y)
-      colnames(pvs) = c('X','time','interaction')
-    }
-  }
-  
-  t_run = as.numeric(difftime(Sys.time(), t_start,units = 'secs'))
-  res <- as.data.frame(apply(pvs, 2, function(x) p.adjust(x,method ='fdr')))
-  rownames(res) <- name
-  colnames(res) = paste0(colnames(res),'.padj')
-  na <- apply(res, 2, function(x)sum(is.na(x))/length(x))
-  sig <- apply(res, 2, function(x) sum(x[!is.na(x)] <= cutoff)) 
-  return(list(res=res, na = na, time = t_run, sig = sig))
-}
 
 
 NBMM.func <- function(dat, cutoff = 0.05, data.type ='longitudinal'){
@@ -624,7 +523,6 @@ MaAsLin2.func <- function(dat, cutoff = 0.05, data.type ='longitudinal', output=
     res <- full_join(X, time) %>% full_join(interaction) %>% column_to_rownames('feature')
   }
   
-  ## does not support longitudinal: https://forum.biobakery.org/t/longitudinal-study-and-correcting-for-cage-effect/2063
   t_run = as.numeric(difftime(Sys.time(), t_start,units = 'secs'))
   na <- apply(res, 2, function(x)sum(is.na(x))/length(x))
   sig <- apply(res, 2, function(x) sum(x[!is.na(x)] <= cutoff)) 
@@ -632,47 +530,6 @@ MaAsLin2.func <- function(dat, cutoff = 0.05, data.type ='longitudinal', output=
 }
 
 
-
-
-## Add 06/24/2022 
-IFAA.func <- function(dat, cutoff = 0.05, data.type ='longitudinal'){
-  t_start = Sys.time()
-  otu <- as.data.frame(t(dat$counts))
-  otu$id <- rownames(otu)
-  meta <- dat$meta.dat
-  meta$id <- rownames(meta)
-  if(data.type=='repeated.measure'){
-    fit <- IFAA(MicrobData = otu, CovData = meta, linkIDname = "id", fdrRate = cutoff, 
-                adjust_method = "BH", testCov = c("X"), ctrlCov = c("Z"),
-                refReadsThresh = 0.01, SDThresh = 0.01, balanceCut = 0.01)
-    res <- as.data.frame(fit$full_results$X[,'adj p-value',drop =F])
-    colnames(res) <- 'X.padj'
-  }
-  
-  if(data.type=='matched.pair'){
-    meta <- meta[,c("time","id"), drop =F]
-    fit <- IFAA(MicrobData = otu, CovData = meta, linkIDname = "id", fdrRate = cutoff, 
-                adjust_method = "BH", testCov = c("time"), ctrlCov =NULL,
-                refReadsThresh = 0.01, SDThresh = 0.01, balanceCut = 0.01)
-    res <- as.data.frame(fit$full_results$time[,'adj p-value',drop =F])
-    colnames(res) <- 'time.padj'
-  }
-  
-  if(data.type=='longitudinal'){
-    meta$interaction <- meta$X * meta$time
-    fit <- IFAA(MicrobData = otu, CovData = meta, linkIDname = "id", fdrRate = cutoff, 
-                adjust_method = "BH", testCov = c("X","time","interaction"), ctrlCov = c("Z"),
-                refReadsThresh = 0.01, SDThresh = 0.01, balanceCut = 0.01)
-    res <- as.data.frame(fit$full_results$X[,'adj p-value',drop =F]) %>% dplyr::rename(X.padj = 'adj p-value') %>% rownames_to_column('otu') %>%
-      full_join(as.data.frame(fit$full_results$time[,'adj p-value',drop =F]) %>% dplyr::rename(time.padj = 'adj p-value') %>% rownames_to_column('otu') ) %>%
-      full_join(as.data.frame(fit$full_results$interaction[,'adj p-value',drop =F])%>% dplyr::rename(interaction.padj = 'adj p-value') %>% rownames_to_column('otu') ) %>% column_to_rownames('otu')
-  }
-  
-  t_run = as.numeric(difftime(Sys.time(), t_start,units = 'secs'))
-  na <- apply(res, 2, function(x)sum(is.na(x))/length(x))
-  sig <- apply(res, 2, function(x) sum(x[!is.na(x)] <= cutoff)) 
-  return(list(res=res, na = na, time = t_run, sig = sig))
-}
 
 
 
